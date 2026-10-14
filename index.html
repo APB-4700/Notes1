@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f7f7f7">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Mine Noter">
+  <meta name="description" content="Private noter, der gemmes lokalt på denne enhed.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <title>Mine Noter</title>
+  <style>
+    :root { color-scheme: light; --bg:#f5f5f7; --panel:#fff; --line:#e5e5e8; --text:#202024; --muted:#8b8b91; --yellow:#f6c945; --soft:#fff7d6; --blue:#2878e8; }
+    * { box-sizing:border-box; }
+    html,body { margin:0; min-height:100%; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:var(--text); background:var(--bg); }
+    button,input,textarea { font:inherit; }
+    button { cursor:pointer; }
+    .app { min-height:100dvh; display:grid; grid-template-columns:260px minmax(0,1fr); max-width:1200px; margin:0 auto; background:var(--panel); box-shadow:0 0 30px #00000008; }
+    aside { background:#f7f7f8; border-right:1px solid var(--line); padding:22px 14px; display:flex; flex-direction:column; gap:16px; min-width:0; }
+    .brand { display:flex; align-items:center; gap:10px; padding:0 10px; font-weight:750; font-size:20px; letter-spacing:-.5px; }
+    .brand-icon { width:28px;height:32px;background:var(--yellow);border-radius:6px;position:relative;box-shadow:inset 0 -2px #d9a91b; }
+    .brand-icon:before { content:"";position:absolute;left:5px;right:5px;top:8px;height:2px;background:#fff8d9;box-shadow:0 6px #fff8d9,0 12px #fff8d9; }
+    .search-wrap { position:relative; }
+    .search-wrap span { position:absolute;left:11px;top:9px;color:#8b8b91;font-size:17px; }
+    #search { width:100%; border:0; border-radius:10px; padding:10px 10px 10px 34px; background:#eaeaec; outline:none; }
+    .section-label { color:#8b8b91; font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; padding:0 10px; margin-top:2px; }
+    .folder-list { display:flex; flex-direction:column; gap:3px; }
+    .folder-row { border:0; width:100%; background:transparent; border-radius:9px; display:flex; align-items:center; gap:9px; padding:10px; text-align:left; color:#3a3a3e; }
+    .folder-row.active { background:#e8e8eb; font-weight:650; }
+    .folder-row .folder-symbol { color:#d3a91f; font-size:16px; }
+    .folder-row .count { margin-left:auto; color:#8b8b91; font-size:12px; }
+    .side-actions { display:flex; gap:8px; margin-top:auto; }
+    .small-btn { border:1px solid var(--line); background:white; border-radius:9px; padding:9px 10px; color:#444; }
+    main { display:grid; grid-template-columns:minmax(250px, 330px) minmax(0,1fr); min-width:0; min-height:100dvh; }
+    .notes-panel { border-right:1px solid var(--line); min-width:0; display:flex; flex-direction:column; background:#fff; }
+    .notes-head { padding:24px 20px 14px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .notes-head h1 { font-size:26px; margin:0; letter-spacing:-.7px; }
+    .icon-btn { width:36px;height:36px; border:0; border-radius:50%; background:transparent; font-size:22px; color:var(--blue); display:grid; place-items:center; }
+    .icon-btn:hover { background:#f0f5ff; }
+    .note-list { overflow:auto; padding:0 10px 18px; }
+    .note-card { width:100%; border:0; border-radius:10px; padding:13px 12px; text-align:left; background:transparent; display:block; margin-bottom:3px; }
+    .note-card.active { background:var(--soft); }
+    .note-card strong { display:block; font-size:15px; font-weight:700; margin-bottom:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .note-card .preview { color:#77777d; font-size:13px; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .note-card .meta { display:flex; gap:7px; color:#929298; font-size:11px; margin-top:7px; }
+    .empty-list { color:#8b8b91; text-align:center; padding:35px 20px; font-size:14px; }
+    .editor { min-width:0; display:flex; flex-direction:column; background:#fff; }
+    .editor-top { display:flex; align-items:center; justify-content:space-between; padding:20px 24px 8px; color:#929298; font-size:12px; gap:12px; }
+    .editor-actions { display:flex; gap:8px; align-items:center; }
+    .editor-actions button { border:0; background:transparent; color:var(--blue); padding:5px; font-size:14px; }
+    #title { border:0; outline:none; resize:none; width:100%; padding:14px 30px 8px; font-size:29px; font-weight:750; letter-spacing:-.7px; line-height:1.15; color:var(--text); background:transparent; }
+    #body { border:0; outline:none; resize:none; width:100%; flex:1; min-height:250px; padding:8px 30px 30px; font-size:17px; line-height:1.55; color:#333338; background:transparent; }
+    .editor-bottom { border-top:1px solid #f0f0f2; padding:10px 20px; display:flex; align-items:center; justify-content:space-between; gap:10px; color:#99999f; font-size:11px; }
+    .editor-bottom button { border:0; background:transparent; color:var(--blue); }
+    .empty-editor { margin:auto; max-width:300px; padding:30px; text-align:center; color:#929298; }
+    .empty-editor .big-note { font-size:48px; margin-bottom:10px; }
+    .mobile-back { display:none; }
+    .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#27272b; color:#fff; padding:10px 15px; border-radius:10px; font-size:13px; opacity:0; pointer-events:none; transition:opacity .2s; z-index:20; }
+    .toast.show { opacity:1; }
+    .privacy-note { font-size:11px; line-height:1.4; color:#888890; padding:0 10px; }
+    @media (max-width:760px) {
+      body { background:#fff; }
+      .app { display:block; min-height:100dvh; box-shadow:none; }
+      aside { display:none; }
+      main { display:block; min-height:100dvh; }
+      .notes-panel { border:0; min-height:100dvh; }
+      .notes-head { padding:calc(16px + env(safe-area-inset-top)) 18px 12px; }
+      .notes-head h1 { font-size:30px; }
+      .note-list { padding:0 10px calc(20px + env(safe-area-inset-bottom)); }
+      .note-card { padding:15px 12px; border-bottom:1px solid #f1f1f3; border-radius:0; margin:0; }
+      .editor { display:none; min-height:100dvh; }
+      .app.editing .notes-panel { display:none; }
+      .app.editing .editor { display:flex; }
+      .editor-top { padding:calc(12px + env(safe-area-inset-top)) 18px 8px; }
+      #title { font-size:28px; padding:16px 22px 8px; }
+      #body { padding:8px 22px 25px; font-size:17px; }
+      .mobile-back { display:inline-block !important; }
+      .editor-bottom { padding-bottom:calc(10px + env(safe-area-inset-bottom)); }
+      .editor-actions { gap:5px; }
+      .editor-actions button { font-size:13px; }
+    }
+    @media (min-width:761px) and (max-width:950px) { .app { grid-template-columns:220px minmax(0,1fr); } main { grid-template-columns:260px minmax(0,1fr); } }
+  </style>
+</head>
+<body>
+<div class="app" id="app">
+  <aside>
+    <div class="brand"><span class="brand-icon"></span><span>Mine Noter</span></div>
+    <div class="search-wrap"><span>⌕</span><input id="search" type="search" placeholder="Søg i alle noter…" aria-label="Søg i noter"></div>
+    <div class="section-label">Mapper</div>
+    <div class="folder-list" id="folders"></div>
+    <div class="side-actions">
+      <button class="small-btn" id="addFolder">＋ Mappe</button>
+      <button class="small-btn" id="newNoteSide">＋ Note</button>
+    </div>
+    <div class="privacy-note">Dine noter gemmes i denne browsers lokale lager på enheden. De synkroniseres ikke automatisk med iCloud.</div>
+  </aside>
+  <main>
+    <section class="notes-panel" id="notesPanel">
+      <div class="notes-head"><h1 id="listTitle">Alle iCloud-noter</h1><button class="icon-btn" id="newNote" aria-label="Ny note" title="Ny note">＋</button></div>
+      <div class="search-wrap" style="padding:0 16px 12px" id="mobileSearch"><span>⌕</span><input id="searchMobile" type="search" placeholder="Søg" aria-label="Søg i noter"></div>
+      <div class="note-list" id="noteList"></div>
+    </section>
+    <section class="editor" id="editor">
+      <div class="editor-top">
+        <button class="editor-actions mobile-back" id="backToList" style="display:none">‹ Noter</button>
+        <span id="saveState">Gemt lokalt</span>
+        <div class="editor-actions">
+          <button id="checklistBtn" title="Indsæt tjekliste">☑ Tjekliste</button>
+          <button id="moveBtn" title="Flyt note">Flyt</button>
+          <button id="deleteBtn" title="Slet note">Slet</button>
+        </div>
+      </div>
+      <textarea id="title" rows="1" placeholder="Titel" aria-label="Notens titel"></textarea>
+      <textarea id="body" placeholder="Begynd at skrive…" aria-label="Notens indhold"></textarea>
+      <div class="editor-bottom"><span id="updatedAt">Ny note</span><button id="exportBtn">Eksportér noter</button></div>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<script>
+(() => {
+  const STORAGE_KEY = 'mine-noter-v1';
+  const app = document.getElementById('app');
+  const els = Object.fromEntries(['folders','noteList','listTitle','search','searchMobile','title','body','saveState','updatedAt','toast'].map(id => [id, document.getElementById(id)]));
+  let state, activeFolder = 'all', activeNote = null, searchTerm = '', saveTimer = null, toastTimer = null;
+  const nowISO = () => new Date().toISOString();
+  const starter = () => {
+    const t = nowISO();
+    return { folders:[{id:'default',name:'Noter',createdAt:t}], notes:[], selectedFolder:'all' };
+  };
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return starter();
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed.folders) || !Array.isArray(parsed.notes)) return starter();
+      if (!parsed.folders.length) parsed.folders.push({id:'default',name:'Noter',createdAt:nowISO()});
+      return parsed;
+    } catch { return starter(); }
+  }
+  state = load();
+  const uid = () => 'n-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,8);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const fmtDate = value => {
+    if (!value) return '';
+    const d = new Date(value), today = new Date();
+    if (d.toDateString() === today.toDateString()) return d.toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});
+    return d.toLocaleDateString('da-DK',{day:'numeric',month:'short'});
+  };
+  const folderName = id => state.folders.find(f => f.id === id)?.name || 'Noter';
+  function persist() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      els.saveState.textContent = 'Gemt lokalt';
+      els.updatedAt.textContent = activeNote ? 'Redigeret ' + fmtDate(state.notes.find(n=>n.id===activeNote)?.updatedAt) : 'Ny note';
+    } catch {
+      els.saveState.textContent = 'Kunne ikke gemme';
+      toast('Lagring mislykkedes. Eksportér dine noter som backup.');
+    }
+  }
+  function toast(message) {
+    els.toast.textContent = message; els.toast.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(()=>els.toast.classList.remove('show'),2300);
+  }
+  function filteredNotes() {
+    const q = searchTerm.trim().toLocaleLowerCase('da');
+    return state.notes.filter(n => (activeFolder === 'all' || n.folderId === activeFolder) &&
+      (!q || (n.title + ' ' + n.body).toLocaleLowerCase('da').includes(q)))
+      .sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));
+  }
+  function renderFolders() {
+    const total = state.notes.length;
+    const rows = [{id:'all',name:'Alle noter',symbol:'▤',count:total}, ...state.folders.map(f=>({id:f.id,name:f.name,symbol:'▰',count:state.notes.filter(n=>n.folderId===f.id).length}))];
+    els.folders.innerHTML = rows.map(f=>`<button class="folder-row ${activeFolder===f.id?'active':''}" data-folder="${esc(f.id)}"><span class="folder-symbol">${f.symbol}</span><span>${esc(f.name)}</span><span class="count">${f.count}</span></button>`).join('');
+    els.folders.querySelectorAll('[data-folder]').forEach(btn=>btn.addEventListener('click',()=>{activeFolder=btn.dataset.folder; render();}));
+  }
+  function renderList() {
+    const folder = activeFolder==='all' ? 'Alle noter' : folderName(activeFolder);
+    els.listTitle.textContent = searchTerm ? 'Søgeresultater' : folder;
+    const notes = filteredNotes();
+    if (!notes.length) {
+      els.noteList.innerHTML = `<div class="empty-list">${searchTerm?'Ingen noter matcher din søgning.':'Ingen noter endnu.<br>Tryk på ＋ for at oprette en.'}</div>`;
+      return;
+    }
+    els.noteList.innerHTML = notes.map(n => {
+      const preview = (n.body||'').replace(/^\s+/,'').replace(/\n/g,' · ') || 'Ingen yderligere tekst';
+      return `<button class="note-card ${activeNote===n.id?'active':''}" data-note="${esc(n.id)}"><strong>${esc(n.title||'Ny note')}</strong><div class="preview">${esc(preview)}</div><div class="meta"><span>${esc(fmtDate(n.updatedAt))}</span><span>· ${esc(folderName(n.folderId))}</span></div></button>`;
+    }).join('');
+    els.noteList.querySelectorAll('[data-note]').forEach(btn=>btn.addEventListener('click',()=>openNote(btn.dataset.note)));
+  }
+  function render() { renderFolders(); renderList(); }
+  function openNote(id) {
+    activeNote = id;
+    const n = state.notes.find(x=>x.id===id);
+    if (!n) return;
+    els.title.value = n.title || ''; els.body.value = n.body || '';
+    els.updatedAt.textContent = 'Redigeret ' + fmtDate(n.updatedAt);
+    els.saveState.textContent = 'Gemt lokalt';
+    app.classList.add('editing');
+    render();
+    if (window.innerWidth <= 760) { setTimeout(()=>els.title.focus({preventScroll:true}),60); }
+  }
+  function newNote() {
+    const folderId = activeFolder==='all' ? (state.folders[0]?.id || 'default') : activeFolder;
+    const n = {id:uid(), title:'', body:'', folderId, createdAt:nowISO(), updatedAt:nowISO()};
+    state.notes.unshift(n); activeNote=n.id; persist(); render(); openNote(n.id);
+    if (window.innerWidth > 760) els.title.focus();
+  }
+  function scheduleSave() {
+    els.saveState.textContent = 'Gemmer…';
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      const n = state.notes.find(x=>x.id===activeNote);
+      if (!n) return;
+      n.title = els.title.value; n.body = els.body.value; n.updatedAt=nowISO();
+      persist(); renderList();
+    }, 220);
+  }
+  function deleteNote() {
+    if (!activeNote) return;
+    const n = state.notes.find(x=>x.id===activeNote);
+    if (!confirm(`Slet "${n?.title || 'Ny note'}"? Dette kan ikke fortrydes.`)) return;
+    state.notes = state.notes.filter(x=>x.id!==activeNote); activeNote=null; persist();
+    els.title.value=''; els.body.value=''; app.classList.remove('editing'); render();
+    toast('Noten er slettet');
+  }
+  function addFolder() {
+    const name = prompt('Navn på den nye mappe:');
+    if (!name || !name.trim()) return;
+    const clean = name.trim();
+    if (state.folders.some(f=>f.name.toLocaleLowerCase('da')===clean.toLocaleLowerCase('da'))) { toast('Der findes allerede en mappe med det navn'); return; }
+    const f={id:uid(),name:clean,createdAt:nowISO()}; state.folders.push(f); activeFolder=f.id; persist(); render(); toast('Mappe oprettet');
+  }
+  function moveNote() {
+    if (!activeNote) return;
+    const n=state.notes.find(x=>x.id===activeNote);
+    const options=state.folders.map((f,i)=>`${i+1}. ${f.name}`).join('\n');
+    const answer=prompt('Flyt noten til hvilken mappe? Skriv nummeret:\n'+options, String(Math.max(1,state.folders.findIndex(f=>f.id===n.folderId)+1)));
+    if (answer===null) return;
+    const idx=Number(answer)-1;
+    if (!Number.isInteger(idx)||idx<0||idx>=state.folders.length) { toast('Ugyldigt mappenummer'); return; }
+    n.folderId=state.folders[idx].id; n.updatedAt=nowISO(); activeFolder=n.folderId; persist(); render(); openNote(n.id); toast('Noten er flyttet');
+  }
+  function insertChecklist() {
+    const start=els.body.selectionStart, end=els.body.selectionEnd, value=els.body.value;
+    const insert=(start>0 && value[start-1]!=='\n' ? '\n' : '')+'☐ ';
+    els.body.value=value.slice(0,start)+insert+value.slice(end);
+    const pos=start+insert.length; els.body.setSelectionRange(pos,pos); els.body.focus(); scheduleSave();
+    toast('Tjeklistepunkt indsat. Kopiér linjen for flere punkter.');
+  }
+  function exportNotes() {
+    const blob=new Blob([JSON.stringify({exportedAt:nowISO(),folders:state.folders,notes:state.notes},null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob), a=document.createElement('a');
+    a.href=url; a.download='mine-noter-backup-'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+    URL.revokeObjectURL(url); toast('Backupfil eksporteret');
+  }
+  function setSearch(value) {
+    searchTerm=value; els.search.value=value; els.searchMobile.value=value; renderList();
+  }
+  document.getElementById('newNote').addEventListener('click',newNote);
+  document.getElementById('newNoteSide').addEventListener('click',newNote);
+  document.getElementById('addFolder').addEventListener('click',addFolder);
+  document.getElementById('deleteBtn').addEventListener('click',deleteNote);
+  document.getElementById('moveBtn').addEventListener('click',moveNote);
+  document.getElementById('checklistBtn').addEventListener('click',insertChecklist);
+  document.getElementById('exportBtn').addEventListener('click',exportNotes);
+  document.getElementById('backToList').addEventListener('click',()=>app.classList.remove('editing'));
+  els.title.addEventListener('input',scheduleSave); els.body.addEventListener('input',scheduleSave);
+  els.search.addEventListener('input',e=>setSearch(e.target.value));
+  els.searchMobile.addEventListener('input',e=>setSearch(e.target.value));
+  window.addEventListener('beforeunload',()=>{clearTimeout(saveTimer); const n=state.notes.find(x=>x.id===activeNote); if(n){n.title=els.title.value;n.body=els.body.value;n.updatedAt=nowISO();} try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch{}});
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+  }
+  render();
+  if (state.notes.length) openNote(state.notes.slice().sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''))[0].id);
+})();
+</script>
+</body>
+</html>
